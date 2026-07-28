@@ -10,6 +10,10 @@ from database.auth import carregar_usuarios
 from database.logs_manager import salvar_log
 
 
+# ==============================
+# CONFIGURAÇÃO DA PÁGINA
+# ==============================
+
 st.set_page_config(
     page_title="Pré - Fechamento Fiscal",
     page_icon="🧾",
@@ -17,50 +21,80 @@ st.set_page_config(
 )
 
 
+# ==============================
+# USUÁRIOS
+# ==============================
+
 usuarios = carregar_usuarios()
 
 
+
 # ==============================
-# LOGIN
+# CONTROLE LOGIN
 # ==============================
 
 if "logado" not in st.session_state:
+
     st.session_state["logado"] = False
 
 
+
+# ==============================
+# TELA LOGIN
+# ==============================
+
 if not st.session_state["logado"]:
+
 
     st.title("🔐 Login do Sistema Fiscal")
 
-    usuario = st.text_input("Usuário")
+
+    usuario = st.text_input(
+        "Usuário"
+    )
+
+
     senha = st.text_input(
         "Senha",
         type="password"
     )
 
 
+
     if st.button("Entrar"):
+
 
         if (
             usuario in usuarios
             and usuarios[usuario]["senha"] == senha
         ):
 
+
             st.session_state["logado"] = True
+
             st.session_state["usuario"] = usuario
-            st.session_state["nome"] = usuarios[usuario]["nome"]
+
+            st.session_state["nome"] = (
+                usuarios[usuario]["nome"]
+            )
+
 
             st.success(
                 "Login realizado com sucesso"
             )
 
+
             st.rerun()
 
+
+
         else:
+
 
             st.error(
                 "Usuário ou senha inválidos"
             )
+
 
 
     st.stop()
@@ -73,20 +107,28 @@ if not st.session_state["logado"]:
 
 with st.sidebar:
 
+
     try:
+
         st.image(
             "assets/logo.png",
             width=180
         )
+
     except:
+
         pass
+
 
 
     st.markdown("---")
 
+
+
     st.success(
         "Sistema Fiscal Inteligente"
     )
+
 
 
     st.markdown(
@@ -95,22 +137,25 @@ with st.sidebar:
 
         ✅ Pré Fechamento  
         ✅ Validações Fiscais  
-        ✅ CFOP  
+        ✅ Conferência CFOP  
         ✅ ICMS  
-        ✅ ICMS ST
         """
     )
+
 
 
     st.markdown("---")
 
 
+
     st.success(
-        f"Usuário: {st.session_state['nome']}"
+        f"Usuário logado: {st.session_state['nome']}"
     )
 
 
-    if st.button("🚪 Sair"):
+
+    if st.button("🚪 Sair do sistema"):
+
 
         st.session_state.clear()
 
@@ -122,29 +167,44 @@ with st.sidebar:
 # CABEÇALHO
 # ==============================
 
-col1, col2 = st.columns([1,3])
+col1, col2 = st.columns(
+    [1, 3]
+)
+
 
 
 with col1:
 
+
     try:
+
         st.image(
             "assets/mascote.png",
             width=220
         )
+
     except:
+
         pass
+
 
 
 
 with col2:
 
+
     st.title(
         "🧾 Pré - Fechamento Fiscal"
     )
 
+
     st.subheader(
         "Assistente Inteligente de Validação Fiscal"
+    )
+
+
+    st.info(
+        "Importe a planilha para iniciar a análise automática"
     )
 
 
@@ -153,12 +213,23 @@ st.markdown("---")
 
 
 
+# ==============================
+# UPLOAD
+# ==============================
+
 arquivo = st.file_uploader(
-    "📂 Importar planilha Excel",
+
+    "📂 Importe a planilha Excel",
+
     type=["xlsx"]
+
 )
 
 
+
+# ==============================
+# PROCESSAMENTO
+# ==============================
 
 if arquivo:
 
@@ -167,7 +238,7 @@ if arquivo:
 
 
         with st.spinner(
-            "Processando..."
+            "🔎 Processando planilha..."
         ):
 
 
@@ -176,45 +247,52 @@ if arquivo:
             )
 
 
-        # DEBUG TEMPORÁRIO
-        with st.expander(
-            "🔎 DEBUG - Conferência valores"
-        ):
-
-            st.write(
-                df.dtypes
-            )
-
-            st.dataframe(
-                df.head()
-            )
-
-
 
         st.success(
-            "Processamento concluído"
+            "✅ Análise concluída com sucesso"
         )
+
 
 
         st.info(
             f"""
-            Unidade:
-            {unidade['nome']}
+            Unidade identificada:
+
+            **{unidade['nome']}**
 
             Estado:
-            {unidade['estado']}
+
+            **{unidade['estado']}**
             """
         )
 
 
-        st.dataframe(
-            df,
-            use_container_width=True,
-            height=600
+
+        st.subheader(
+            "Resultado das validações"
         )
 
 
+
+        st.dataframe(
+
+            df,
+
+            use_container_width=True,
+
+            height=650
+
+        )
+
+
+
+        # ==============================
+        # EXPORTAÇÃO EXCEL
+        # ==============================
+
+
         output = BytesIO()
+
 
 
         with pd.ExcelWriter(
@@ -222,48 +300,71 @@ if arquivo:
             engine="openpyxl"
         ) as writer:
 
+
             df.to_excel(
+
                 writer,
+
                 index=False,
+
                 sheet_name="Resultado"
+
             )
+
+
+
+        excel_data = output.getvalue()
+
 
 
         st.download_button(
 
-            "📥 Baixar Resultado",
+            label="📥 Baixar Resultado Excel",
 
-            output.getvalue(),
+            data=excel_data,
 
-            "resultado_pre_fechamento.xlsx",
+            file_name="resultado_pre_fechamento.xlsx",
 
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            mime=(
+                "application/vnd.openxmlformats-"
+                "officedocument.spreadsheetml.sheet"
+            )
 
         )
 
 
+
+        # ==============================
+        # LOG
+        # ==============================
 
         salvar_log({
 
             "usuario":
                 st.session_state["usuario"],
 
+
             "nome":
                 st.session_state["nome"],
+
 
             "data_hora":
                 datetime.now().strftime(
                     "%Y-%m-%d %H:%M:%S"
                 ),
 
+
             "arquivo":
                 arquivo.name,
+
 
             "unidade":
                 unidade["nome"],
 
+
             "estado":
                 unidade["estado"],
+
 
             "linhas_processadas":
                 len(df)
@@ -271,9 +372,12 @@ if arquivo:
         })
 
 
+
     except Exception as erro:
 
 
         st.error(
-            f"Erro: {erro}"
+
+            f"Erro durante processamento: {erro}"
+
         )
