@@ -10,10 +10,6 @@ from database.auth import carregar_usuarios
 from database.logs_manager import salvar_log
 
 
-# ==============================
-# CONFIGURAÇÃO DA PÁGINA
-# ==============================
-
 st.set_page_config(
     page_title="Pré - Fechamento Fiscal",
     page_icon="🧾",
@@ -21,24 +17,16 @@ st.set_page_config(
 )
 
 
-# ==============================
-# CARREGAR USUÁRIOS
-# ==============================
-
 usuarios = carregar_usuarios()
 
 
 # ==============================
-# CONTROLE DE LOGIN
+# LOGIN
 # ==============================
 
 if "logado" not in st.session_state:
     st.session_state["logado"] = False
 
-
-# ==============================
-# TELA DE LOGIN
-# ==============================
 
 if not st.session_state["logado"]:
 
@@ -62,7 +50,9 @@ if not st.session_state["logado"]:
             st.session_state["usuario"] = usuario
             st.session_state["nome"] = usuarios[usuario]["nome"]
 
-            st.success("Login realizado com sucesso")
+            st.success(
+                "Login realizado com sucesso"
+            )
 
             st.rerun()
 
@@ -83,19 +73,16 @@ if not st.session_state["logado"]:
 
 with st.sidebar:
 
-
     try:
         st.image(
             "assets/logo.png",
             width=180
         )
-
     except:
         pass
 
 
     st.markdown("---")
-
 
     st.success(
         "Sistema Fiscal Inteligente"
@@ -108,9 +95,9 @@ with st.sidebar:
 
         ✅ Pré Fechamento  
         ✅ Validações Fiscais  
-        ✅ Conferência CFOP  
+        ✅ CFOP  
         ✅ ICMS  
-        ✅ ICMS ST  
+        ✅ ICMS ST
         """
     )
 
@@ -119,11 +106,11 @@ with st.sidebar:
 
 
     st.success(
-        f"Usuário logado: {st.session_state['nome']}"
+        f"Usuário: {st.session_state['nome']}"
     )
 
 
-    if st.button("🚪 Sair do sistema"):
+    if st.button("🚪 Sair"):
 
         st.session_state.clear()
 
@@ -135,20 +122,17 @@ with st.sidebar:
 # CABEÇALHO
 # ==============================
 
-col1, col2 = st.columns([1, 3])
+col1, col2 = st.columns([1,3])
 
 
 with col1:
 
     try:
-
         st.image(
             "assets/mascote.png",
             width=220
         )
-
     except:
-
         pass
 
 
@@ -163,180 +147,133 @@ with col2:
         "Assistente Inteligente de Validação Fiscal"
     )
 
-    st.info(
-        "Importe a planilha para iniciar a análise automática"
-    )
 
 
 st.markdown("---")
 
 
 
-# ==============================
-# UPLOAD PLANILHA
-# ==============================
-
 arquivo = st.file_uploader(
-    "📂 Importe a planilha Excel",
+    "📂 Importar planilha Excel",
     type=["xlsx"]
 )
 
 
 
-# ==============================
-# PROCESSAMENTO
-# ==============================
-
 if arquivo:
 
 
-    arquivo_id = (
-        arquivo.name,
-        arquivo.size
-    )
+    try:
 
 
-    if (
-        "arquivo_processado" not in st.session_state
-        or st.session_state["arquivo_processado"] != arquivo_id
-    ):
+        with st.spinner(
+            "Processando..."
+        ):
 
 
-        try:
-
-
-            with st.spinner(
-                "🔎 Processando planilha..."
-            ):
-
-
-                df, unidade = processar_planilha(
-                    arquivo
-                )
-
-
-
-            st.session_state["arquivo_processado"] = arquivo_id
-            st.session_state["resultado"] = df
-            st.session_state["unidade"] = unidade
-
-
-
-            salvar_log({
-
-                "usuario":
-                    st.session_state["usuario"],
-
-                "nome":
-                    st.session_state["nome"],
-
-                "data_hora":
-                    datetime.now().strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    ),
-
-                "arquivo":
-                    arquivo.name,
-
-                "unidade":
-                    unidade["nome"],
-
-                "estado":
-                    unidade["estado"],
-
-                "linhas_processadas":
-                    len(df)
-
-            })
-
-
-
-        except Exception as erro:
-
-
-            st.error(
-                f"Erro durante processamento: {erro}"
+            df, unidade = processar_planilha(
+                arquivo
             )
 
-            st.stop()
+
+        # DEBUG TEMPORÁRIO
+        with st.expander(
+            "🔎 DEBUG - Conferência valores"
+        ):
+
+            st.write(
+                df.dtypes
+            )
+
+            st.dataframe(
+                df.head()
+            )
 
 
 
-# ==============================
-# EXIBIÇÃO RESULTADO
-# ==============================
-
-if "resultado" in st.session_state:
-
-
-    df = st.session_state["resultado"]
-    unidade = st.session_state["unidade"]
-
-
-    st.success(
-        "✅ Análise concluída com sucesso"
-    )
-
-
-    st.info(
-        f"""
-        Unidade identificada:
-        **{unidade['nome']}**
-
-        Estado:
-        **{unidade['estado']}**
-        """
-    )
-
-
-
-    st.subheader(
-        "Resultado das validações"
-    )
-
-
-    st.dataframe(
-        df,
-        use_container_width=True,
-        height=650
-    )
-
-
-
-    # ==============================
-    # EXPORTAÇÃO EXCEL
-    # ==============================
-
-    output = BytesIO()
-
-
-    with pd.ExcelWriter(
-        output,
-        engine="openpyxl"
-    ) as writer:
-
-
-        df.to_excel(
-            writer,
-            index=False,
-            sheet_name="Resultado"
+        st.success(
+            "Processamento concluído"
         )
 
 
-    excel_data = output.getvalue()
+        st.info(
+            f"""
+            Unidade:
+            {unidade['nome']}
+
+            Estado:
+            {unidade['estado']}
+            """
+        )
 
 
+        st.dataframe(
+            df,
+            use_container_width=True,
+            height=600
+        )
 
-    st.download_button(
 
-        label="📥 Baixar Resultado Excel",
+        output = BytesIO()
 
-        data=excel_data,
 
-        file_name=
+        with pd.ExcelWriter(
+            output,
+            engine="openpyxl"
+        ) as writer:
+
+            df.to_excel(
+                writer,
+                index=False,
+                sheet_name="Resultado"
+            )
+
+
+        st.download_button(
+
+            "📥 Baixar Resultado",
+
+            output.getvalue(),
+
             "resultado_pre_fechamento.xlsx",
 
-        mime=
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
-    )
+        )
+
+
+
+        salvar_log({
+
+            "usuario":
+                st.session_state["usuario"],
+
+            "nome":
+                st.session_state["nome"],
+
+            "data_hora":
+                datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+
+            "arquivo":
+                arquivo.name,
+
+            "unidade":
+                unidade["nome"],
+
+            "estado":
+                unidade["estado"],
+
+            "linhas_processadas":
+                len(df)
+
+        })
+
+
+    except Exception as erro:
+
+
+        st.error(
+            f"Erro: {erro}"
+        )
