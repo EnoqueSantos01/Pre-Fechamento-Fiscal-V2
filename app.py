@@ -40,7 +40,7 @@ if "logado" not in st.session_state:
 
 
 # ==============================
-# TELA LOGIN
+# LOGIN
 # ==============================
 
 if not st.session_state["logado"]:
@@ -87,14 +87,11 @@ if not st.session_state["logado"]:
             st.rerun()
 
 
-
         else:
-
 
             st.error(
                 "Usuário ou senha inválidos"
             )
-
 
 
     st.stop()
@@ -124,11 +121,9 @@ with st.sidebar:
     st.markdown("---")
 
 
-
     st.success(
         "Sistema Fiscal Inteligente"
     )
-
 
 
     st.markdown(
@@ -139,13 +134,12 @@ with st.sidebar:
         ✅ Validações Fiscais  
         ✅ Conferência CFOP  
         ✅ ICMS  
+        ✅ ICMS ST  
         """
     )
 
 
-
     st.markdown("---")
-
 
 
     st.success(
@@ -189,7 +183,6 @@ with col1:
 
 
 
-
 with col2:
 
 
@@ -228,156 +221,180 @@ arquivo = st.file_uploader(
 
 
 # ==============================
-# PROCESSAMENTO
+# PROCESSAMENTO CONTROLADO
 # ==============================
 
 if arquivo:
 
 
-    try:
+    nome_arquivo = arquivo.name
 
 
-        with st.spinner(
-            "🔎 Processando planilha..."
-        ):
+
+    # Processa somente se for um novo arquivo
+
+    if (
+        "arquivo_processado" not in st.session_state
+        or st.session_state["arquivo_processado"] != nome_arquivo
+    ):
 
 
-            df, unidade = processar_planilha(
-                arquivo
+        try:
+
+
+            with st.spinner(
+                "🔎 Processando planilha..."
+            ):
+
+
+                df, unidade = processar_planilha(
+                    arquivo
+                )
+
+
+
+            st.session_state["df_resultado"] = df
+
+            st.session_state["unidade_resultado"] = unidade
+
+            st.session_state["arquivo_processado"] = nome_arquivo
+
+
+
+            # Salva log apenas uma vez
+
+            salvar_log({
+
+                "usuario":
+                    st.session_state["usuario"],
+
+
+                "nome":
+                    st.session_state["nome"],
+
+
+                "data_hora":
+                    datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
+
+
+                "arquivo":
+                    arquivo.name,
+
+
+                "unidade":
+                    unidade["nome"],
+
+
+                "estado":
+                    unidade["estado"],
+
+
+                "linhas_processadas":
+                    len(df)
+
+            })
+
+
+        except Exception as erro:
+
+
+            st.error(
+                f"Erro durante processamento: {erro}"
             )
 
-
-
-        st.success(
-            "✅ Análise concluída com sucesso"
-        )
+            st.stop()
 
 
 
-        st.info(
-            f"""
-            Unidade identificada:
+    # Recupera resultado salvo
 
-            **{unidade['nome']}**
+    df = st.session_state["df_resultado"]
 
-            Estado:
-
-            **{unidade['estado']}**
-            """
-        )
+    unidade = st.session_state["unidade_resultado"]
 
 
 
-        st.subheader(
-            "Resultado das validações"
-        )
+    # ==============================
+    # RESULTADO
+    # ==============================
+
+    st.success(
+        "✅ Análise concluída com sucesso"
+    )
 
 
 
-        st.dataframe(
+    st.info(
+        f"""
+        Unidade identificada:
 
-            df,
+        **{unidade['nome']}**
 
-            use_container_width=True,
+        Estado:
 
-            height=650
-
-        )
-
-
-
-        # ==============================
-        # EXPORTAÇÃO EXCEL
-        # ==============================
-
-
-        output = BytesIO()
+        **{unidade['estado']}**
+        """
+    )
 
 
 
-        with pd.ExcelWriter(
-            output,
-            engine="openpyxl"
-        ) as writer:
-
-
-            df.to_excel(
-
-                writer,
-
-                index=False,
-
-                sheet_name="Resultado"
-
-            )
+    st.subheader(
+        "Resultado das validações"
+    )
 
 
 
-        excel_data = output.getvalue()
+    st.dataframe(
+
+        df,
+
+        use_container_width=True,
+
+        height=650
+
+    )
 
 
 
-        st.download_button(
+    # ==============================
+    # EXPORTAÇÃO EXCEL
+    # ==============================
 
-            label="📥 Baixar Resultado Excel",
+    output = BytesIO()
 
-            data=excel_data,
 
-            file_name="resultado_pre_fechamento.xlsx",
 
-            mime=(
-                "application/vnd.openxmlformats-"
-                "officedocument.spreadsheetml.sheet"
-            )
+    with pd.ExcelWriter(
+        output,
+        engine="openpyxl"
+    ) as writer:
+
+
+        df.to_excel(
+
+            writer,
+
+            index=False,
+
+            sheet_name="Resultado"
 
         )
 
 
 
-        # ==============================
-        # LOG
-        # ==============================
+    st.download_button(
 
-        salvar_log({
+        label="📥 Baixar Resultado Excel",
 
-            "usuario":
-                st.session_state["usuario"],
+        data=output.getvalue(),
 
+        file_name="resultado_pre_fechamento.xlsx",
 
-            "nome":
-                st.session_state["nome"],
-
-
-            "data_hora":
-                datetime.now().strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                ),
-
-
-            "arquivo":
-                arquivo.name,
-
-
-            "unidade":
-                unidade["nome"],
-
-
-            "estado":
-                unidade["estado"],
-
-
-            "linhas_processadas":
-                len(df)
-
-        })
-
-
-
-    except Exception as erro:
-
-
-        st.error(
-
-            f"Erro durante processamento: {erro}"
-
+        mime=(
+            "application/vnd.openxmlformats-"
+            "officedocument.spreadsheetml.sheet"
         )
+
+    )
