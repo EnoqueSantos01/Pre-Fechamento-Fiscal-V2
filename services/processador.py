@@ -9,35 +9,74 @@ from utils.formatacao import (
     formatar_cfop
 )
 
+# =====================================================
 # VALIDAÇÕES GERAIS
+# =====================================================
+
 from validacoes.chaves import validar_chaves
 from validacoes.icms import calcular_icms
 from validacoes.sequencia import validar_sequencia
 
+from validacoes.nf_cancelada import (
+    validar_retorno_sefaz,
+    validar_data_cancelamento,
+    validar_observacao_nf_cancelada
+)
 
+from validacoes.especies import (
+    validar_especie_cfop,
+    validar_nfcom_chave
+)
+
+from validacoes.cst import validar_cfop_cst
+
+
+# =====================================================
 # VALIDAÇÕES CFOP
+# =====================================================
+
 from validacoes.cfop import (
+
     validar_cfop_2556_icms_st,
     validar_cfop_1556_icms_st,
+
+    validar_cfop_1556_icms,
+
+    validar_cfop_1407_icms_com,
+    validar_cfop_2407_icms_com,
+
+    validar_cfop_1407_icms,
+    validar_cfop_2407_icms,
+
     validar_cfop_2556_Vlr_ICMS_Com,
     validar_cfop_2551_Vlr_ICMS_Com,
+
     validar_cfop_2352_frete,
+
     validar_cfop_5556_ICMS,
     validar_cfop_6556_ICMS,
+
     validar_cfop_5556_DIFAL_ICMS,
     validar_cfop_6556_DIFAL_ICMS,
+
     validar_cfop_6107_icms,
     validar_cfop_6108_icms
+
 )
 
 
+# =====================================================
 # ICMS COMPLEMENTAR
+# =====================================================
+
 from validacoes.icms_complementar import calcular_icms_complementar
 
 
+# =====================================================
 # DIFERENÇAS
-from calculos.diferencas import calcular_diferencas
+# =====================================================
 
+from calculos.diferencas import calcular_diferencas
 
 
 # =====================================================
@@ -49,21 +88,13 @@ def converter_numero(valor):
     if pd.isna(valor):
         return 0
 
-
-    # Se já veio como número do Excel
     if isinstance(valor, (int, float)):
         return valor
 
-
     valor = str(valor).strip()
-
 
     if valor == "":
         return 0
-
-
-    # Formato brasileiro
-    # Exemplo: 1.234,56
 
     if "," in valor:
 
@@ -73,7 +104,6 @@ def converter_numero(valor):
             .replace(",", ".")
         )
 
-
     try:
 
         return float(valor)
@@ -81,7 +111,6 @@ def converter_numero(valor):
     except:
 
         return 0
-
 
 
 # =====================================================
@@ -108,7 +137,6 @@ def ajustar_valores(df):
 
     ]
 
-
     for coluna in colunas_valores:
 
         if coluna in df.columns:
@@ -118,9 +146,7 @@ def ajustar_valores(df):
                 .apply(converter_numero)
             )
 
-
     return df
-
 
 
 # =====================================================
@@ -129,33 +155,30 @@ def ajustar_valores(df):
 
 def processar_planilha(arquivo):
 
-
     df = pd.read_excel(
 
         arquivo,
 
         dtype={
-
             "Chave Doc": str,
             "CFOP": str
-
         }
 
     )
 
-
-    # Ajusta valores logo na entrada
+    # ==========================================
+    # Ajusta valores monetários
+    # ==========================================
 
     df = ajustar_valores(df)
 
-
-
-    # OBSERVAÇÕES
+    # ==========================================
+    # Observações
+    # ==========================================
 
     if "Observacoes" not in df.columns:
 
         df["Observacoes"] = ""
-
 
     df["Observacoes"] = (
 
@@ -165,21 +188,17 @@ def processar_planilha(arquivo):
 
     )
 
-
-
-    # VALIDA COLUNAS
+    # ==========================================
+    # Validação das colunas
+    # ==========================================
 
     validar_colunas(df)
 
+    # ==========================================
+    # Identifica a filial
+    # ==========================================
 
-
-    # IDENTIFICA FILIAL
-
-    filial = int(
-        df["Filial"].iloc[0]
-    )
-
-
+    filial = int(df["Filial"].iloc[0])
 
     if filial not in UNIDADES:
 
@@ -187,28 +206,32 @@ def processar_planilha(arquivo):
             f"Filial {filial} não cadastrada"
         )
 
-
-
     dados_unidade = UNIDADES[filial]
 
-
-
-    # FORMATAÇÕES
+    # ==========================================
+    # Formatações
+    # ==========================================
 
     df = formatar_chaves(df)
 
     df = formatar_cfop(df)
 
-
-
-    # =================================================
+    # ==========================================
     # VALIDAÇÕES CFOP
-    # =================================================
+    # ==========================================
 
     VALIDACOES_CFOP = [
 
         validar_cfop_2556_icms_st,
         validar_cfop_1556_icms_st,
+
+        validar_cfop_1556_icms,
+
+        validar_cfop_1407_icms_com,
+        validar_cfop_2407_icms_com,
+
+        validar_cfop_1407_icms,
+        validar_cfop_2407_icms,
 
         validar_cfop_2556_Vlr_ICMS_Com,
         validar_cfop_2551_Vlr_ICMS_Com,
@@ -226,61 +249,54 @@ def processar_planilha(arquivo):
 
     ]
 
-
-
     for validacao in VALIDACOES_CFOP:
 
         df = validacao(df)
 
-
-
-    # =================================================
-    # ICMS COMPLEMENTAR
-    # =================================================
+    # ==========================================
+    # ICMS Complementar
+    # ==========================================
 
     df = calcular_icms_complementar(
-
         df,
-
         dados_unidade
-
     )
 
-
-
-    # =================================================
-    # ICMS PRÓPRIO
-    # =================================================
+    # ==========================================
+    # ICMS Próprio
+    # ==========================================
 
     df = calcular_icms(df)
 
-
-
-    # =================================================
-    # DIFERENÇAS
-    # =================================================
+    # ==========================================
+    # Diferenças
+    # ==========================================
 
     df = calcular_diferencas(df)
 
-
-
-    # =================================================
-    # VALIDAÇÕES FINAIS
-    # =================================================
+    # ==========================================
+    # Validações Gerais
+    # ==========================================
 
     VALIDACOES_GERAIS = [
 
         validar_chaves,
-        validar_sequencia
+
+        validar_sequencia,
+
+        validar_retorno_sefaz,
+        validar_data_cancelamento,
+        validar_observacao_nf_cancelada,
+
+        validar_especie_cfop,
+        validar_nfcom_chave,
+
+        validar_cfop_cst
 
     ]
-
-
 
     for validacao in VALIDACOES_GERAIS:
 
         df = validacao(df)
-
-
 
     return df, dados_unidade
