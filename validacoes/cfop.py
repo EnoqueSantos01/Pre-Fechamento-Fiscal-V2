@@ -32,6 +32,71 @@ def validar_cfop_1556_icms_st(df):
 
     return df
 
+def validar_cfop_1556_icms(df):
+
+    filtro = (
+        (df["CFOP"] == "1556") &
+        (df["Vlr ICMS Com"] > 0)
+    )
+
+    df = adicionar_observacao(
+        df,
+        filtro,
+        "CFOP 1556 não pode ter ICMS COM"
+    )
+    return df
+
+def validar_cfop_1407_icms_com(df):
+    filtro = (
+        (df["CFOP"] == "1407") &
+        (df["Vlr ICMS Com"] > 0)
+    )
+
+    df = adicionar_observacao(
+        df,
+        filtro,
+        "CFOP 1407 não pode ter ICMS COM"
+    )
+    return df
+
+def validar_cfop_2407_icms_com(df):
+    filtro = (
+        (df["CFOP"] == "2407") &
+        (df["Vlr ICMS Com"] > 0)
+    )
+
+    df = adicionar_observacao(
+        df,
+        filtro,
+        "CFOP 2407 não pode ter ICMS COM"
+    )
+    return df
+
+def validar_cfop_1407_icms(df):
+    filtro = (
+        (df["CFOP"] == "1407") &
+        (df["Vlr. ICMS"] > 0)
+    )
+
+    df = adicionar_observacao(
+        df,
+        filtro,
+        "CFOP 1407 não pode ter ICMS"
+    )
+    return df
+
+def validar_cfop_2407_icms(df):
+    filtro = (
+        (df["CFOP"] == "2407") &
+        (df["Vlr. ICMS"] > 0)
+    )
+
+    df = adicionar_observacao(
+        df,
+        filtro,
+        "CFOP 2407 não pode ter ICMS"
+    )
+    return df
 
 def validar_cfop_2556_Vlr_ICMS_Com(df):
 
@@ -118,13 +183,13 @@ def validar_cfop_5556_DIFAL_ICMS(df):
 
     filtro = (
         (df["CFOP"] == "5556") &
-        (df["Difal ICMS"] > 0)
+        (df["Vlr ICMS Com"] > 0)
     )
 
     df = adicionar_observacao(
         df,
         filtro,
-        "CFOP 5556 não pode estar com valor de DIFAL ICMS"
+        "CFOP 5556 não pode estar com valor de ICMS Com"
     )
 
     return df
@@ -134,13 +199,13 @@ def validar_cfop_6556_DIFAL_ICMS(df):
 
     filtro = (
         (df["CFOP"] == "6556") &
-        (df["Difal ICMS"] > 0)
+        (df["Vlr ICMS Com"] > 0)
     )
 
     df = adicionar_observacao(
         df,
         filtro,
-        "CFOP 6556 não pode estar com valor de DIFAL ICMS"
+        "CFOP 6556 não pode estar com valor de ICMS COM"
     )
 
     return df
