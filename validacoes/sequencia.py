@@ -1,20 +1,48 @@
-from utils.observacoes import adicionar_observacao
+import pandas as pd
 
+from utils.observacoes import adicionar_observacao
 
 
 def validar_sequencia(df):
 
-    if "NUMERO" not in df.columns:
+    if "Documento" not in df.columns or "Serie" not in df.columns:
         return df
 
-    numeros = df["NUMERO"].fillna(0)
+    df = df.copy()
 
-    filtro = numeros.ne(numeros.shift() + 1)
+    df["Documento"] = pd.to_numeric(
+        df["Documento"],
+        errors="coerce"
+    )
 
-    filtro.iloc[0] = False
+    df["Serie"] = (
+        df["Serie"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+    )
+
+    filtro = pd.Series(False, index=df.index)
+
+    for serie in df["Serie"].unique():
+
+        idx = df["Serie"] == serie
+
+        documentos = df.loc[idx, "Documento"]
+
+        quebra = (
+            documentos.notna() &
+            documentos.shift().notna() &
+            (documentos != documentos.shift() + 1)
+        )
+
+        if not quebra.empty:
+            quebra.iloc[0] = False
+
+        filtro.loc[idx] = quebra
 
     return adicionar_observacao(
         df,
         filtro,
-        "Quebra de sequência numérica"
+        "Possível quebra na sequência numérica"
     )
