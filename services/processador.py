@@ -1,4 +1,5 @@
 import pandas as pd
+import streamlit as st
 
 from configs.unidades import UNIDADES
 
@@ -143,8 +144,8 @@ def processar_planilha(arquivo):
         }
     )
     
-    print(df["Vlr Contabil"].head())
-    print(df["Vlr Contabil"].dtype)
+    st.write(df["Vlr Contabil"].head())
+    st.write(df["Vlr Contabil"].dtype)
 
     # CORREÇÃO VALORES
     df = ajustar_valores_monetarios(df)
