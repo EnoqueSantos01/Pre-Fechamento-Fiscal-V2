@@ -142,7 +142,9 @@ def processar_planilha(arquivo):
             "CFOP": str
         }
     )
-
+    
+    print(df["Valor Contábil"].head())
+    print(df["Valor Contábil"].dtype)
 
     # CORREÇÃO VALORES
     df = ajustar_valores_monetarios(df)
