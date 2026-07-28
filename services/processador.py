@@ -9,7 +9,6 @@ from utils.formatacao import (
     formatar_cfop
 )
 
-
 # VALIDAÇÕES GERAIS
 from validacoes.chaves import validar_chaves
 from validacoes.icms import calcular_icms
@@ -42,80 +41,81 @@ from calculos.diferencas import calcular_diferencas
 
 
 # =====================================================
-# TRATAMENTO DE VALORES MONETÁRIOS
+# CONVERSÃO SEGURA DE VALORES
 # =====================================================
 
-def ajustar_valores_monetarios(df):
+def converter_numero(valor):
 
-    palavras_valores = [
-        "valor",
-        "vlr",
-        "base",
-        "icms",
-        "ipi",
-        "pis",
-        "cofins",
-        "total",
-        "contabil"
+    if pd.isna(valor):
+        return 0
+
+
+    # Se já veio como número do Excel
+    if isinstance(valor, (int, float)):
+        return valor
+
+
+    valor = str(valor).strip()
+
+
+    if valor == "":
+        return 0
+
+
+    # Formato brasileiro
+    # Exemplo: 1.234,56
+
+    if "," in valor:
+
+        valor = (
+            valor
+            .replace(".", "")
+            .replace(",", ".")
+        )
+
+
+    try:
+
+        return float(valor)
+
+    except:
+
+        return 0
+
+
+
+# =====================================================
+# TRATAMENTO DE VALORES
+# =====================================================
+
+def ajustar_valores(df):
+
+    colunas_valores = [
+
+        "Vlr Contabil",
+        "Base Icms",
+        "Vlr. ICMS",
+        "Vlr ICMS Com",
+        "Icms Ret",
+        "Difal ICMS",
+
+        "Valor",
+        "Valor Total",
+        "Valor Nota",
+        "Vlr Total",
+        "Vlr Nota",
+        "Total NF"
+
     ]
 
 
-    for coluna in df.columns:
+    for coluna in colunas_valores:
 
-        nome_coluna = coluna.lower()
+        if coluna in df.columns:
 
-
-        if any(
-            palavra in nome_coluna
-            for palavra in palavras_valores
-        ):
-
-
-            def converter(valor):
-
-                if pd.isna(valor):
-                    return 0
-
-
-                # Se já veio como número do Excel
-                if isinstance(valor, (int, float)):
-                    return valor
-
-
-                valor = str(valor).strip()
-
-
-                if valor == "":
-                    return 0
-
-
-                valor = (
-                    valor
-                    .replace("R$", "")
-                    .strip()
-                )
-
-
-                # Caso venha como texto brasileiro
-                # Exemplo: 1.786,35
-                if "," in valor:
-
-                    valor = (
-                        valor
-                        .replace(".", "")
-                        .replace(",", ".")
-                    )
-
-
-                try:
-                    return float(valor)
-
-                except:
-                    return valor
-
-
-            df[coluna] = df[coluna].apply(
-                converter
+            df[coluna] = (
+                df[coluna]
+                .apply(converter_numero)
             )
 
 
@@ -124,23 +124,29 @@ def ajustar_valores_monetarios(df):
 
 
 # =====================================================
-# PROCESSAMENTO
+# PROCESSAMENTO PRINCIPAL
 # =====================================================
 
 def processar_planilha(arquivo):
 
 
     df = pd.read_excel(
+
         arquivo,
+
         dtype={
+
             "Chave Doc": str,
             "CFOP": str
+
         }
+
     )
 
 
-    # Ajusta valores monetários
-    df = ajustar_valores_monetarios(df)
+    # Ajusta valores logo na entrada
+
+    df = ajustar_valores(df)
 
 
 
@@ -152,9 +158,11 @@ def processar_planilha(arquivo):
 
 
     df["Observacoes"] = (
+
         df["Observacoes"]
         .fillna("")
         .astype(str)
+
     )
 
 
@@ -172,11 +180,13 @@ def processar_planilha(arquivo):
     )
 
 
+
     if filial not in UNIDADES:
 
         raise Exception(
             f"Filial {filial} não cadastrada"
         )
+
 
 
     dados_unidade = UNIDADES[filial]
@@ -217,6 +227,7 @@ def processar_planilha(arquivo):
     ]
 
 
+
     for validacao in VALIDACOES_CFOP:
 
         df = validacao(df)
@@ -228,31 +239,33 @@ def processar_planilha(arquivo):
     # =================================================
 
     df = calcular_icms_complementar(
+
         df,
+
         dados_unidade
+
     )
 
 
 
     # =================================================
-    # CÁLCULOS
+    # ICMS PRÓPRIO
     # =================================================
 
     df = calcular_icms(df)
 
 
-    df = calcular_icms_complementar(
-        df,
-        dados_unidade
-    )
 
+    # =================================================
+    # DIFERENÇAS
+    # =================================================
 
     df = calcular_diferencas(df)
 
 
 
     # =================================================
-    # VALIDAÇÕES GERAIS
+    # VALIDAÇÕES FINAIS
     # =================================================
 
     VALIDACOES_GERAIS = [
@@ -261,6 +274,7 @@ def processar_planilha(arquivo):
         validar_sequencia
 
     ]
+
 
 
     for validacao in VALIDACOES_GERAIS:
