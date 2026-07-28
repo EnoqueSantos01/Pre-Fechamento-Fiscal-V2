@@ -143,8 +143,8 @@ def processar_planilha(arquivo):
         }
     )
     
-    print(df["Valor Contábil"].head())
-    print(df["Valor Contábil"].dtype)
+    print(df["Vlr Contabil"].head())
+    print(df["Vlr Contabil"].dtype)
 
     # CORREÇÃO VALORES
     df = ajustar_valores_monetarios(df)
