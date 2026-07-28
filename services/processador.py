@@ -1,5 +1,4 @@
 import pandas as pd
-import streamlit as st
 
 from configs.unidades import UNIDADES
 
@@ -37,13 +36,13 @@ from validacoes.cfop import (
 from validacoes.icms_complementar import calcular_icms_complementar
 
 
-# Cálculo diferenças impostos
+# DIFERENÇAS
 from calculos.diferencas import calcular_diferencas
 
 
 
 # =====================================================
-# AJUSTE DE VALORES MONETÁRIOS
+# TRATAMENTO DE VALORES MONETÁRIOS
 # =====================================================
 
 def ajustar_valores_monetarios(df):
@@ -90,7 +89,6 @@ def ajustar_valores_monetarios(df):
                     return 0
 
 
-                # Remove símbolo moeda
                 valor = (
                     valor
                     .replace("R$", "")
@@ -98,8 +96,8 @@ def ajustar_valores_monetarios(df):
                 )
 
 
-                # Formato brasileiro:
-                # 1.786,35
+                # Caso venha como texto brasileiro
+                # Exemplo: 1.786,35
                 if "," in valor:
 
                     valor = (
@@ -110,12 +108,9 @@ def ajustar_valores_monetarios(df):
 
 
                 try:
-
                     return float(valor)
 
-
                 except:
-
                     return valor
 
 
@@ -128,9 +123,8 @@ def ajustar_valores_monetarios(df):
 
 
 
-
 # =====================================================
-# PROCESSAMENTO PRINCIPAL
+# PROCESSAMENTO
 # =====================================================
 
 def processar_planilha(arquivo):
@@ -143,11 +137,9 @@ def processar_planilha(arquivo):
             "CFOP": str
         }
     )
-    
-    st.write(df["Vlr Contabil"].head())
-    st.write(df["Vlr Contabil"].dtype)
 
-    # CORREÇÃO VALORES
+
+    # Ajusta valores monetários
     df = ajustar_valores_monetarios(df)
 
 
@@ -203,7 +195,6 @@ def processar_planilha(arquivo):
     # VALIDAÇÕES CFOP
     # =================================================
 
-
     VALIDACOES_CFOP = [
 
         validar_cfop_2556_icms_st,
@@ -236,7 +227,6 @@ def processar_planilha(arquivo):
     # ICMS COMPLEMENTAR
     # =================================================
 
-
     df = calcular_icms_complementar(
         df,
         dados_unidade
@@ -247,7 +237,6 @@ def processar_planilha(arquivo):
     # =================================================
     # CÁLCULOS
     # =================================================
-
 
     df = calcular_icms(df)
 
@@ -265,7 +254,6 @@ def processar_planilha(arquivo):
     # =================================================
     # VALIDAÇÕES GERAIS
     # =================================================
-
 
     VALIDACOES_GERAIS = [
 
