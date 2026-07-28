@@ -5,6 +5,7 @@ def calcular_icms(df):
 
     df = df.copy()
 
+
     # ======================================
     # Colunas de saída
     # ======================================
@@ -20,37 +21,73 @@ def calcular_icms(df):
         if coluna not in df.columns:
             df[coluna] = 0.0
 
+
+
+    # ======================================
+    # Conversão segura de valores
+    # ======================================
+
+    def converter_numero(valor):
+
+        if pd.isna(valor):
+            return 0
+
+
+        # Já é número vindo do Excel/pandas
+        if isinstance(valor, (int, float)):
+            return valor
+
+
+        valor = str(valor).strip()
+
+
+        if valor == "":
+            return 0
+
+
+        # Caso venha texto brasileiro
+        # Ex: 1.234,56
+
+        if "," in valor:
+
+            valor = (
+                valor
+                .replace(".", "")
+                .replace(",", ".")
+            )
+
+
+        try:
+
+            return float(valor)
+
+        except:
+
+            return 0
+
+
+
     # ======================================
     # Base ICMS
     # ======================================
 
     df["Base Icms"] = (
         df["Base Icms"]
-        .astype(str)
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
+        .apply(converter_numero)
     )
 
-    df["Base Icms"] = pd.to_numeric(
-        df["Base Icms"],
-        errors="coerce"
-    ).fillna(0)
+
 
     # ======================================
-    # Alíquota Informada
+    # Alíquota
     # ======================================
 
     df["Aliq ICMS."] = (
         df["Aliq ICMS."]
-        .astype(str)
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
+        .apply(converter_numero)
     )
 
-    df["Aliq ICMS."] = pd.to_numeric(
-        df["Aliq ICMS."],
-        errors="coerce"
-    ).fillna(0)
+
 
     # ======================================
     # ICMS Informado
@@ -58,15 +95,10 @@ def calcular_icms(df):
 
     df["Vlr. ICMS"] = (
         df["Vlr. ICMS"]
-        .astype(str)
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False)
+        .apply(converter_numero)
     )
 
-    df["Vlr. ICMS"] = pd.to_numeric(
-        df["Vlr. ICMS"],
-        errors="coerce"
-    ).fillna(0)
+
 
     # ======================================
     # ICMS Calculado
@@ -77,13 +109,18 @@ def calcular_icms(df):
         (df["Aliq ICMS."] / 100)
     ).round(2)
 
+
+
     # ======================================
     # Alíquota Informada
     # ======================================
 
     df["Alíquota Informada"] = (
         df["Aliq ICMS."]
-    ).round(2)
+        .round(2)
+    )
+
+
 
     # ======================================
     # Alíquota Calculada
@@ -91,7 +128,9 @@ def calcular_icms(df):
 
     df["Alíquota Calculada"] = 0.0
 
+
     filtro = df["Base Icms"] > 0
+
 
     df.loc[filtro, "Alíquota Calculada"] = (
         (
@@ -99,5 +138,7 @@ def calcular_icms(df):
             df.loc[filtro, "Base Icms"]
         ) * 100
     ).round(2)
+
+
 
     return df
