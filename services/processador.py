@@ -14,6 +14,7 @@ from utils.formatacao import (
 # ===========================
 
 from validacoes.chaves import validar_chaves
+from validacoes.sequencia import validar_sequencia
 from validacoes.nf_cancelada import validar_nf_cancelada
 from validacoes.especies import (
     validar_especie_cfop,
@@ -245,6 +246,8 @@ def processar_planilha(arquivo):
     VALIDACOES_GERAIS = [
 
         validar_chaves,
+
+        validar_sequencia,
 
         validar_nf_cancelada,
 
