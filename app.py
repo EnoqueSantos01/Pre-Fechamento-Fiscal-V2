@@ -134,9 +134,13 @@ with st.sidebar:
         ✅ Validações Fiscais  
         ✅ Conferência CFOP  
         ✅ ICMS Próprio
+        
         ✅ ICMS Complementar
+        
         ✅ CST
+        
         ✅ Chave
+        
         ✅ Retorno SEFAZ
         """
     )
