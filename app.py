@@ -133,11 +133,11 @@ with st.sidebar:
         ✅ Pré Fechamento  
         ✅ Validações Fiscais  
         ✅ Conferência CFOP  
-        ✅ ICMS Próprio
-        ✅ ICMS Complementar
-        ✅ CST
-        ✅ Chave
-        ✅ Retorno SEFAZ
+        ✅ ICMS Próprio  
+        ✅ ICMS Complementar  
+        ✅ CST  
+        ✅ Chave  
+        ✅ Retorno SEFAZ  
         
         """
     )
