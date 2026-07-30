@@ -133,8 +133,11 @@ with st.sidebar:
         ✅ Pré Fechamento  
         ✅ Validações Fiscais  
         ✅ Conferência CFOP  
-        ✅ ICMS  
-        ✅ ICMS ST  
+        ✅ ICMS Próprio
+        ✅ ICMS Complementar
+        ✅ CST
+        ✅ Chave
+        ✅ Retorno SEFAZ
         """
     )
 
@@ -328,13 +331,7 @@ if arquivo:
 
     st.info(
         f"""
-        Unidade identificada:
-
-        **{unidade['nome']}**
-
-        Estado:
-
-        **{unidade['estado']}**
+        Unidade identificada: **{unidade['nome']}** // Estado: **{unidade['estado']}**
         """
     )
 
